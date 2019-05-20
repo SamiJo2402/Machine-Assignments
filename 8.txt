@@ -1,0 +1,509 @@
+Assignment 8
+15.2
+
+1.
+@ reverseArray.s
+        .cpu    cortex-a53
+        .fpu    neon-fp-armv8
+        .syntax unified        
+        .equ    nElements,10    
+        .equ    intArray,-52    
+        .equ    locals,40      
+
+        .section .rodata
+        .align  2
+prompt:
+        .asciz        "Enter an integer:\n"
+display:
+        .asciz        "In reverse order:\n"
+
+        .text
+        .align  2
+        .global main
+        .type   main, %function
+main:
+        sub     sp, sp, 16      
+        str     r4, [sp, 0]    
+        str     r5, [sp, 4]    
+        str     fp, [sp, 8]    
+        str     lr, [sp, 12]    
+        add     fp, sp, 12     
+        sub     sp, sp, locals  
+                
+        add     r4, fp, intArray  
+        mov     r5, 0          
+fillLoop:
+        cmp     r5, nElements   
+        bge     allFull        
+        ldr     r0, promptAddr  
+        bl      writeStr
+        bl      getDecInt      
+        lsl     r1, r5, 2      
+        str     r0, [r4, r1]    
+        add     r5, r5, 1       
+        b       fillLoop
+allFull:
+        ldr     r0, displayAddr 
+        bl      writeStr
+        
+        add     r4, fp, intArray  
+        mov     r5, 9           
+printLoop:
+        lsl     r1, r5, 2      
+        ldr     r0, [r4, r1]    
+        bl      putDecInt       
+        bl      newLine
+        subs    r5, r5, 1       
+        bge     printLoop
+allDone:
+        mov     r0, 0           
+        add     sp, sp, locals  
+        ldr     r4, [sp, 0]    
+        ldr     r5, [sp, 4]    
+        ldr     fp, [sp, 8]     
+        ldr     lr, [sp, 12]    
+        add     sp, sp, 16      
+        bx      lr             
+
+promptAddr:
+        .word    prompt
+displayAddr:
+        .word    display
+
+
+
+
+15.5 
+1.
+@ structPass3.s
+
+        .cpu    cortex-a53
+        .fpu    neon-fp-armv8
+        .syntax unified        
+
+        .include "theTagStruct.s"  
+        .equ    y,-36          
+        .equ    x,-24           
+        .equ    locals,24       
+
+        .section .rodata
+        .align  2
+displayX:
+        .asciz        "x fields:\n"
+displayY:
+        .asciz        "y fields:\n"
+
+        .text
+        .align  2
+        .global main
+        .type   main, %function
+main:
+        sub     sp, sp, 16      
+                                
+        str     r4, [sp, 4]     
+        str     fp, [sp, 8]     
+        str     lr, [sp, 12]   
+        add     fp, sp, 12      
+        sub     sp, sp, locals  
+        
+        add     r0, fp, x       
+        bl      getStruct
+
+        add     r0, fp, y      
+        bl      getStruct
+
+        ldr     r0, displayXaddr
+        bl      writeStr
+        add     r0, fp, x         
+        bl      putStruct
+        bl      newLine
+
+        ldr     r0, displayYaddr
+        bl      writeStr
+        add     r0, fp, y         
+        bl      putStruct
+        bl      newLine
+
+        mov     r0, 0          
+        add     sp, sp, locals 
+        ldr     r4, [sp, 4]     
+        ldr     fp, [sp, 8]    
+        ldr     lr, [sp, 12]  
+        add     sp, sp, 16     
+        bx      lr             
+        
+        .align  2
+displayXaddr:
+        .word   displayX
+displayYaddr:
+        .word   displayY
+
+@ getStruct.s
+
+        .cpu    cortex-a53
+        .fpu    neon-fp-armv8
+        .syntax unified        
+        .include "theTagStruct.s" 
+        
+        .section .rodata
+        .align  2
+charPrompt:
+        .asciz        "Enter a character: "
+intPrompt:
+        .asciz        "Enter an integer: "
+
+        .text
+        .align  2
+        .global getStruct
+        .type   getStruct, %function
+getStruct:
+        sub     sp, sp, 16      
+        str     r4, [sp, 4]     
+        str     fp, [sp, 8]     
+        str     lr, [sp, 12]    
+        add     fp, sp, 12      
+        
+        mov     r4, r0          
+        
+        ldr     r0, charPromptAddr
+        bl      writeStr        
+        bl      getChar         
+        strb    r0, [r4, aChar] 
+        
+        
+        ldr     r0, intPromptAddr
+        bl      writeStr       
+        bl      getDecInt      
+        str     r0, [r4, anInt] 
+
+        ldr     r0, charPromptAddr
+        bl      writeStr       
+        bl      getChar         
+        strb    r0, [r4, anotherChar] 
+
+        mov     r0, 0           
+        ldr     r4, [sp, 4]     
+        ldr     fp, [sp, 8]    
+        ldr     lr, [sp, 12]    
+        add     sp, sp, 16     
+        bx      lr              
+
+        .align  2
+
+charPromptAddr:
+        .word   charPrompt
+intPromptAddr:
+        .word   intPrompt
+
+@ putStruct.s
+
+        .cpu    cortex-a53
+        .fpu    neon-fp-armv8
+        .syntax unified         
+
+        .include "theTagStruct.s"  
+        .section .rodata
+        .align  2
+dispAChar:
+        .asciz        "         aChar = "
+dispAnInt:
+        .asciz        "         anInt = "
+dispOtherChar:
+        .asciz        "   anotherChar = "
+
+        .text
+        .align  2
+        .global putStruct
+        .type   putStruct, %function
+putStruct:
+        sub     sp, sp, 16      
+                                
+        str     r4, [sp, 4]     
+        str     fp, [sp, 8]     
+        str     lr, [sp, 12]   
+        add     fp, sp, 12     
+        
+        mov     r4, r0           
+        
+        ldr     r0, dispACharAddr  
+        bl      writeStr
+        ldrb    r0, [r4, aChar]
+        bl      putChar
+        bl      newLine
+        ldr     r0, dispAnIntAddr 
+        bl      writeStr
+        ldr     r0, [r4, anInt]
+        bl      putDecInt
+        bl      newLine
+        ldr     r0, dispOtherCharAddr 
+        bl      writeStr
+        ldrb    r0, [r4, anotherChar]
+        bl      putChar
+        bl      newLine
+
+        mov     r0, 0             
+        ldr     r4, [sp, 4]    
+        ldr     fp, [sp, 8]    
+        ldr     lr, [sp, 12]   
+        add     sp, sp, 16     
+        bx      lr            
+
+        .align  2
+dispACharAddr:
+        .word   dispAChar
+dispAnIntAddr:
+        .word   dispAnInt
+dispOtherCharAddr:
+        .word   dispOtherChar
+
+@ getChar.s
+
+        .cpu    cortex-a53
+        .fpu    neon-fp-armv8
+        .syntax unified         
+        .equ    maxChars,2      
+        .equ    inputChar,-12   
+        .equ    locals,8        
+
+        .text
+        .align  2
+        .global getChar
+        .type   getChar, %function
+getChar:
+        sub     sp, sp, 8      
+        str     fp, [sp, 0]     
+        str     lr, [sp, 4]    
+        add     fp, sp, 4       
+        sub     sp, sp, locals  
+        
+        add     r0, fp, inputChar  
+        mov     r1, maxChars    
+        bl      readLn
+
+        ldrb    r0, [fp, inputChar] 
+        
+        add     sp, sp, locals  
+        ldr     fp, [sp, 0]     
+        ldr     lr, [sp, 4]     
+        add     sp, sp, 8      
+        bx      lr              
+
+
+15.7
+1.
+@ incFraction.s
+        .cpu    cortex-a53
+        .fpu    neon-fp-armv8
+        .syntax unified        
+        .equ    x,-12          
+        .equ    locals,8      
+
+        .text
+        .align  2
+        .global main
+        .type   main, %function
+main:
+        sub     sp, sp, 8      
+        str     fp, [sp, 0]    
+        str     lr, [sp, 4]    
+        add     fp, sp, 4       
+        sub     sp, sp, locals  
+        
+        add     r0, fp, x       
+        bl      fractionConstr
+
+        add     r0, fp, x       
+        bl      fractionGet
+
+        add     r0, fp, x      
+        mov     r1, 1 
+        bl      fractionAddInt
+        
+        add     r0, fp, x       
+        bl      fractionDisplay
+
+        mov     r0, 0           
+        add     sp, sp, locals 
+        ldr     fp, [sp, 0]     
+        ldr     lr, [sp, 4]    
+        add     sp, sp, 8      
+        bx      lr              
+
+@ fractionObject.s
+
+        .equ    num,0    
+        .equ    den,4   
+
+
+        .cpu    cortex-a53
+        .fpu    neon-fp-armv8
+        .syntax unified         
+
+        .include "fractionObject.s"  
+        
+        .text
+        .align  2
+        .global fractionConstr
+        .type   fractionConstr, %function
+fractionConstr:
+        sub     sp, sp, 8       
+        str     fp, [sp, 0]     
+        str     lr, [sp, 4]    
+        add     fp, sp, 4      
+        
+        mov     r1, 1           
+        str     r1, [r0, num]
+        
+        mov     r1, 2           
+        str     r1, [r0, den]
+
+        mov     r0, 0           
+        ldr     fp, [sp, 0]    
+        ldr     lr, [sp, 4]   
+        add     sp, sp, 8      
+        bx      lr              
+
+@ fractionGet.s
+
+        .cpu    cortex-a53
+        .fpu    neon-fp-armv8
+        .syntax unified         
+        .include "fractionObject.s"
+        .section .rodata
+        .align  2
+numPrompt:
+        .asciz        "  Enter numerator: "
+denPrompt:
+        .asciz        "Enter denominator: "
+
+        .text
+        .align  2
+        .global fractionGet
+        .type   fractionGet, %function
+fractionGet:
+        sub     sp, sp, 16     
+        str     r4, [sp, 4]    
+        str     fp, [sp, 8]     
+        str     lr, [sp, 12]    
+        add     fp, sp, 12     
+        
+        mov     r4, r0        
+        
+        ldr     r0, numPromptAddr
+        bl      writeStr        
+        bl      getDecInt       
+        str     r0, [r4, num]   
+                
+        ldr     r0, denPromptAddr
+        bl      writeStr        
+        bl      getDecInt       
+        str     r0, [r4, den]   
+        mov     r0, 0           
+        ldr     r4, [sp, 4]     
+        ldr     fp, [sp, 8]     
+        ldr     lr, [sp, 12]    
+        add     sp, sp, 16      
+        bx      lr              
+
+        .align  2
+numPromptAddr:
+        .word   numPrompt
+denPromptAddr:
+        .word   denPrompt
+
+@ fractionAddInt.s
+        .cpu    cortex-a53
+        .fpu    neon-fp-armv8
+        .syntax unified        
+        .include "fractionObject.s"  
+        .text
+        .align  2
+        .global fractionAddInt
+        .type   fractionAddInt, %function
+fractionAddInt:
+        sub     sp, sp, 16      
+        str     r4, [sp, 4]    
+        str     fp, [sp, 8]    
+        str     lr, [sp, 12]  
+        add     fp, sp, 12     
+        
+        mov     r4, r0          
+        
+        ldr     r0, [r4, den]   
+        mul     r2, r1, r0     
+        ldr     r0, [r4, num]   
+        add     r2, r2, r0      
+        str     r2, [r4, num]   
+        
+        mov     r0, 0          
+        ldr     r4, [sp, 4]    
+        ldr     fp, [sp, 8]    
+        ldr     lr, [sp, 12]   
+        add     sp, sp, 16     
+        bx      lr              
+
+@ fractionDisplay.s
+        .cpu    cortex-a53
+        .fpu    neon-fp-armv8
+        .syntax unified        
+        .include "fractionObject.s" 
+        .text
+        .align  2
+        .global fractionDisplay
+        .type   fractionDisplay, %function
+fractionDisplay:
+        sub     sp, sp, 16      
+        str     r4, [sp, 4]     
+        str     fp, [sp, 8]     
+        str     lr, [sp, 12]    
+        add     fp, sp, 12      
+        
+        mov     r4, r0          
+        
+        ldr     r0, [r4, num]   
+        bl      putDecInt
+        mov     r0, '/         
+        bl      putChar
+        ldr     r0, [r4, den]  
+        bl      putDecInt
+        bl      newLine
+
+        mov     r0, 0           
+        ldr     r4, [sp, 4]     
+        ldr     fp, [sp, 8]    
+        ldr     lr, [sp, 12]    
+        add     sp, sp, 16      
+        bx      lr              
+
+@ putChar.s
+        .cpu    cortex-a53
+        .fpu    neon-fp-armv8
+        .syntax unified        
+
+        .equ    STDOUT,1
+        .equ    theChar,-5     
+        .equ    locals,8       
+
+        .text
+        .align  2
+        .global putChar
+        .type   putChar, %function
+putChar:
+        sub     sp, sp, 8      
+        str     fp, [sp, 0]     
+        str     lr, [sp, 4]    
+        add     fp, sp, 4      
+        sub     sp, sp, locals
+
+        strb    r0, [fp, theChar] 
+        mov     r0, STDOUT      
+        add     r1, fp, theChar   
+        mov     r2, 1          
+        bl      write
+
+        mov     r0, 0           
+        add     sp, sp, locals  
+        ldr     fp, [sp, 0]     
+        ldr     lr, [sp, 4]    
+        add     sp, sp, 8      
+        bx      lr             
