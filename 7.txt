@@ -1,0 +1,526 @@
+Assignment 7
+14.2
+1.
+
+
+@ lowerCase.s
+
+        .cpu    cortex-a53
+        .fpu    neon-fp-armv8
+        .syntax unified         
+        .equ    nBytes,50 
+        .section .rodata
+        .align  2
+prompt:
+        .asciz        "Enter alphabetic characters: "
+
+        .text
+        .align  2
+        .global main
+        .type   main, %function
+main:
+        sub     sp, sp, 16     
+                                
+        str     r4, [sp, 4]     
+        str     fp, [sp, 8]     
+        str     lr, [sp, 12]    
+        add     fp, sp, 12      
+        
+        mov     r0, nBytes      
+        bl      malloc
+        mov     r4, r0          
+
+        ldr     r0, setPrompt
+        bl      writeStr
+        
+        mov     r0, r4          
+        mov     r1, nBytes      
+        bl      readLn
+       
+	mov	r0, r4		
+	bl	toLower
+ 
+        mov     r0, r4          
+        bl      writeStr
+        
+        mov     r0, r4          
+        bl      free
+        
+        mov     r0, 0           
+        ldr     r4, [sp, 4]     
+        ldr     fp, [sp, 8]     
+        ldr     lr, [sp, 12]    
+        add     sp, sp, 16      
+        bx      lr              
+
+setPrompt:
+        .word    prompt
+
+@ toLower.s
+        .cpu    cortex-a53
+        .fpu    neon-fp-armv8
+        .syntax unified        
+        .equ    lowerMask,0x20
+        .equ    NUL,0
+
+        .text
+        .align  2
+        .global toLower
+        .type   toLower, %function
+toLower:
+        sub     sp, sp, 16     
+        str     r4, [sp, 0]     
+        str     r5, [sp, 4]    
+        str     fp, [sp, 8]     
+        str     lr, [sp, 12]   
+        add     fp, sp, 12      
+        mov     r4, r0         
+        mov     r5, #0          
+while:
+        ldrb    r3, [r4]       
+        cmp     r3, NUL         
+        beq     done         
+
+        orr     r3, r3, lowerMask  
+        strb    r3, [r4]        
+
+        add     r4, r4, 1       
+        add     r5, r5, 1       
+        b       while       
+done:
+        mov     r0, r5          
+        ldr     r4, [sp, 0]     
+        ldr     r5, [sp, 4]     
+        ldr     fp, [sp, 8]    
+        ldr     lr, [sp, 12]    
+        add     sp, sp, 16     
+        bx      lr              
+
+
+14.4
+1. I tested it
+
+
+2. yes, program in 14.4.1 works correctly because all alphabetical characters are 
+numerically higher than the numeral characters in the ASCII code
+
+3.
+@ ToHex.s
+        .cpu    cortex-a53
+        .fpu    neon-fp-armv8
+        .syntax unified         
+        .equ    maxChars,9      
+        .equ    string,-16  
+        .equ    loc,16       
+
+        .section .rodata
+        .align  2
+prompt:
+        .asciz        "Enter up to 32-bit hex number: "
+display:
+        .asciz        "The integer is: %i\n"
+
+        .text
+        .align  2
+        .global main
+        .type   main, %function
+main:
+        sub     sp, sp, 8       
+        str     fp, [sp, 0]     
+        str     lr, [sp, 4]     
+        add     fp, sp, 4       
+        sub     sp, sp, loc 
+        
+        ldr     r0, prompt  
+        bl      writeStr
+        
+        add     r0, fp, string 
+        mov     r1, maxChars    
+        bl      readLn
+        
+        add     r0, fp, string  
+        bl      hexToInt        
+
+        mov     r1, r0         
+        ldr     r0, getDisplay 
+        bl      printf          
+        
+        mov     r0, 0           
+        add     sp, sp, loc 
+        ldr     fp, [sp, 0]     
+        ldr     lr, [sp, 4]    
+        add     sp, sp, 8       
+        bx      lr              
+
+prompt:
+        .word    prompt
+getDisplay:
+        .word    display
+
+
+4. 
+@ addHex.s
+
+        .cpu    cortex-a53
+        .fpu    neon-fp-armv8
+        .syntax unified        
+        .equ    maxCh,9      
+        .equ    inp1,-24   
+        .equ    inp2,-36  
+        .equ    out,-52   
+        .equ    lv,40       
+
+        .section .rodata
+        .align  2
+prompt:
+        .asciz        "Enter up to 32-bit hex number: "
+display:
+        .asciz        "Their sum is: "
+
+        .text
+        .align  2
+        .global main
+        .type   main, %function
+main:
+        sub     sp, sp, 16      
+        str     r4, [sp, 0]     
+        str     r5, [sp, 4]     
+        str     fp, [sp, 8]     
+        str     lr, [sp, 12]    
+        add     fp, sp, 12      
+        sub     sp, sp, lv  
+        
+        ldr     r0, setPrompt
+        bl      writeStr
+        
+        add     r0, fp, inp1  
+        mov     r1, maxCh
+        bl      readLn
+        add     r0, fp, inp1 
+        bl      hexToInt        
+        mov     r4, r0          
+
+        ldr     r0, setPrompt   
+        bl      writeStr
+
+        add     r0, fp, inp2 
+        mov     r1, maxCh    
+        bl      readLn
+        add     r0, fp, inp2 
+        bl      hexToInt        
+        mov     r5, r0          
+
+        add     r1, r4, r5      
+        add     r0, fp, out
+        bl      intToHex        
+        
+        ldr     r0, displayAddr 
+        bl      writeStr
+        
+        add     r0, fp, out
+        bl      writeStr
+        
+        bl      newLine         
+        
+        mov     r0, 0           
+        add     sp, sp, lv
+        ldr     r4, [sp, 0]     
+        ldr     r5, [sp, 4]     
+        ldr     fp, [sp, 8]     
+        ldr     lr, [sp, 12]    
+        add     sp, sp, 16      
+        bx      lr              
+
+setPrompt:
+        .word    prompt
+displayAddr:
+        .word    display
+
+
+
+14.7
+1.@ incrementDec.s
+
+        .cpu    cortex-a53
+        .fpu    neon-fp-armv8
+        .syntax unified         
+
+        .equ    maxChars,11     
+        .equ    inputString,-16 
+        .equ    outputString,-28 
+        .equ    locals,32      
+
+
+        .section .rodata
+        .align  2
+prompt:
+        .asciz        "Enter an unsigned number up to 4294967294: "
+
+
+        .text
+        .align  2
+        .global main
+        .type   main, %function
+main:
+        sub     sp, sp, 8       
+        str     fp, [sp, 0]     
+        str     lr, [sp, 4]     
+        add     fp, sp, 4       
+        sub     sp, sp, locals  
+        
+        ldr     r0, promptAddr  
+        bl      writeStr
+        
+        add     r0, fp, inputString  
+        mov     r1, maxChars    
+        bl      readLn
+        
+        add     r0, fp, inputString  
+        bl      uDecToInt       
+        
+        add     r1, r0, 1       
+        add     r0, fp, outputString
+        bl      uIntToDec
+        
+        add     r0, fp, outputString
+        bl      writeStr
+        bl      newLine
+        
+        mov     r0, 0          
+        add     sp, sp, locals  
+        ldr     fp, [sp, 0]    
+        ldr     lr, [sp, 4]     
+        add     sp, sp, 8       
+        bx      lr              
+
+promptAddr:
+        .word    prompt
+
+
+2. @ uIntToDecMls.s
+
+        .cpu    cortex-a53
+        .fpu    neon-fp-armv8
+        .syntax unified         
+
+        .equ    tempString,-40  
+        .equ    locals,16      
+        .equ    zero,0x30      
+        .equ    NUL,0
+
+        .text
+        .align  2
+        .global uIntToDec
+        .type   uIntToDec, %function
+uIntToDec:
+        sub     sp, sp, 24      
+        str     r4, [sp, 0]     
+        str     r5, [sp, 4]     
+        str     r6, [sp, 8]     
+        str     r7, [sp, 12]    
+        str     fp, [sp, 16]    
+        str     lr, [sp, 20]    
+        add     fp, sp, 20      
+        sub     sp, sp, locals 
+        
+        mov     r4, r0         
+        add     r5, fp, tempString 
+        mov     r7, 10          
+        
+        mov     r0, NUL         
+        strb    r0, [r5]
+        add     r5, r5, 1       
+
+        mov     r0, zero        
+        strb    r0, [r5]
+        movs    r6, r1          
+        beq     copyLoop        
+convertLoop:
+        cmp     r6, 0           
+        beq     copy            
+        udiv    r0, r6, r7      
+        mls     r2, r0, r7, r6 
+        mov     r6, r0          
+        orr     r2, r2, zero    
+        strb    r2, [r5]
+        add     r5, r5, 1       
+        b       convertLoop
+copy:
+        sub     r5, r5, 1       
+copyLoop:
+        ldrb    r0, [r5]        
+        strb    r0, [r4]        
+        cmp     r0, NUL         
+        beq     allDone         
+        add     r4, r4, 1       
+        sub     r5, r5, 1       
+        b       copyLoop
+        
+allDone:        
+        strb    r0, [r4]        
+        add     sp, sp, locals  
+        ldr     r4, [sp, 0]     
+        ldr     r5, [sp, 4]     
+        ldr     r6, [sp, 8]    
+        ldr     r7, [sp, 12]    
+        ldr     fp, [sp, 16]    
+        ldr     lr, [sp, 20]    
+        add     sp, sp, 24      
+        bx      lr              
+
+3.
+@ incrementSigned.s
+
+
+        .cpu    cortex-a53
+        .fpu    neon-fp-armv8
+        .syntax unified     
+        .section .rodata
+        .align  2
+prompt:
+        .asciz        "Enter a signed integer between -2147483648 and +2147483646: "
+
+
+        .text
+        .align  2
+        .global main
+        .type   main, %function
+main:
+        sub     sp, sp, 8       
+        str     fp, [sp, 0]     
+        str     lr, [sp, 4]     
+        add     fp, sp, 4       
+        
+        ldr     r0, promptAddr  
+        bl      writeStr
+        
+        bl      getDecInt      
+        
+        add     r0, r0, 1      
+        bl      putDecInt       
+        bl      newLine
+        
+        mov     r0, 0           
+        ldr     fp, [sp, 0]     
+        ldr     lr, [sp, 4]     
+        add     sp, sp, 8       
+        bx      lr              
+
+promptAddr:
+        .word    prompt
+
+@ getDecInt.s
+
+
+        .cpu    cortex-a53
+        .fpu    neon-fp-armv8
+        .syntax unified         
+        .equ    maxChars,12    
+        .equ    inputString,-20 
+        .equ    locals,8        
+
+
+        .equ    POS,0
+        .equ    NEG,1
+
+
+        .text
+        .align  2
+        .global getDecInt
+        .type   getDecInt, %function
+getDecInt:
+        sub     sp, sp, 16      
+                               
+        str     r4, [sp, 4]    
+        str     fp, [sp, 8]     
+        str     lr, [sp, 12]    
+        add     fp, sp, 12     
+        sub     sp, sp, locals  
+        
+        add     r0, fp, inputString 
+        mov     r1, maxChars   
+        bl      readLn
+        
+        add     r0, fp, inputString 
+        mov     r4, POS         
+
+        ldrb    r1, [r0]        
+        cmp     r1, '-          
+        bne     checkPlus       
+        mov     r4, NEG        
+        add     r0, r0, 1       
+        b       convert        
+checkPlus:  
+        cmp     r1, '+         
+        bne     convert         
+        add     r0, r0, 1      
+convert:
+        bl      uDecToInt
+        
+        cmp     r4, POS         
+        beq     allDone        
+        mvn     r0, r0          
+        add     r0, r0, 1       
+allDone:        
+        add     sp, sp, locals 
+        ldr     r4, [sp, 4]    
+        ldr     fp, [sp, 8]     
+        ldr     lr, [sp, 12]    
+        add     sp, sp, 16      
+        bx      lr              
+@ putDecInt.s
+
+
+        .cpu    cortex-a53
+        .fpu    neon-fp-armv8
+        .syntax unified         
+        .equ    decString,-20 
+        .equ    locals,8       
+
+
+        .equ    POS,0
+        .equ    NEGBIT,0x80000000
+
+
+        .text
+        .align  2
+        .global putDecInt
+        .type   putDecInt, %function
+putDecInt:
+        sub     sp, sp, 16      
+                               
+        str     r4, [sp, 4]     
+        str     fp, [sp, 8]     
+        str     lr, [sp, 12]   
+        add     fp, sp, 12      
+        sub     sp, sp, locals  
+        
+        add     r4, fp, decString  
+        mov     r1, '+          
+        strb    r1, [r4]
+        tst     r0, NEGBIT      
+        beq     positive        
+        mov     r1, '-          
+        strb    r1, [r4]
+        mvn     r0, r0          
+        add     r0, r0, 1       
+positive:
+        mov     r1, r0          
+        add     r0, r4, 1       
+        bl      uIntToDec
+
+        add     r0, fp, decString  
+        bl      writeStr
+
+        add     sp, sp, locals  
+        ldr     r4, [sp, 4]     
+        ldr     fp, [sp, 8]     
+        ldr     lr, [sp, 12]    
+        add     sp, sp, 16      
+        bx      lr             
+
+
+
+
+
+
